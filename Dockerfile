@@ -13,6 +13,7 @@ RUN apt update && \
     libjpeg62-turbo-dev \
     libmcrypt-dev \
     libicu-dev \
+    libwebp-dev \
     libzip-dev \
     libmagickwand-dev \
     ssl-cert \
@@ -26,7 +27,7 @@ RUN apt update && \
     --no-install-recommends && \
     docker-php-ext-install pdo_mysql && \
     docker-php-ext-install mysqli && \
-    docker-php-ext-configure gd --with-freetype=/usr/include/ --with-jpeg=/usr/include/ && \
+    docker-php-ext-configure gd --with-freetype=/usr/include/ --with-jpeg=/usr/include/ --with-webp=/usr/include/ && \
     docker-php-ext-install gd && \
     docker-php-ext-install intl && \
     docker-php-ext-install zip && \
