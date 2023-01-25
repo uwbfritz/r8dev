@@ -55,8 +55,8 @@ function clone_repo() {
       git clone $drrepo html
       docker-compose up -d
     else
-      echo "html directory not found, exiting"
-      exit 1
+      echo "html directory not found, cloning"
+      git clone $drrepo html
   fi
 }
 
@@ -100,6 +100,11 @@ function destroy_all() {
   fi
 }
 
+# Attach to frontend container
+function attach() {
+  docker exec -it "$(docker ps -aqf "name=$drcontainer")" /bin/bash
+}
+
 function main() {
 
   case "$drfunction" in
@@ -118,6 +123,9 @@ function main() {
     "stop")
       stop_devenv
       ;;
+    "attach")
+      attach
+      ;;
     "destroy")
       destroy_devenv
       ;;
@@ -135,6 +143,7 @@ function main() {
       echo "  clone - Clone the repo into the html directory"
       echo "  start - Start the development environment"
       echo "  stop - Stop the development environment"
+      echo "  attach - Attach to the frontend container"
       echo "  destroy - Destroy the development environment"
       echo "  destroyall - Destroy all containers, images, volumes, networks, and your dev environment"
       echo ""
