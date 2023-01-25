@@ -1,0 +1,28 @@
+version: "3"
+services:
+  frontend:
+    container_name: frontend
+    build: .
+    image: "uwbfritz/wdsdev:latest"
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./html:/var/www/html:rw
+      - ./config/php.ini:/usr/local/etc/php/php.ini:ro
+      - ./config/apache2.conf:/etc/apache2/apache2.conf:ro
+      # For Drupal
+      #- ${HOME}/docker/d9privatefiles:/home/d9privatefiles:rw
+      #- ${HOME}/docker/d9tempfiles:/home/d9tempfiles:rw
+      #- ${HOME}/docker/d9publicfiles:/var/www/html/web/sites/default/files:rw
+    links:
+      - db
+  db:
+    image: mysql:8.0
+    volumes:
+      - ./data:/var/lib/mysql:rw
+    environment:
+      MYSQL_ROOT_PASSWORD: wdsdev*
+      MYSQL_DATABASE: wds_dev
+      MYSQL_USER: wds_dev
+      MYSQL_PASSWORD: wds_dev

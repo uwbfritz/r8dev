@@ -1,0 +1,146 @@
+#!/usr/bin/env bash
+
+#---------------------------------------------------------------------------------------------------
+#  *                              Devenv 0.1.0 - Dev Environment Management Script
+#    
+#    Author: Bill Fritz
+#    Description: Dev Environment Management Script
+#    Last Modified: 2023-01-25
+#    
+#---------------------------------------------------------------------------------------------------
+
+# Variables
+# --------------------------------------------------------------------------------------------------
+drimage="uwbfritz/wdsdev"
+drtag="latest"
+drcontainer="frontend"
+drdatabase="wds_dev"
+drdbuser="root"
+drdbpassword="wdsdev*"
+drfunction="$1"
+drparam="$2"
+drrepo="https://git.tacoma.uw.edu/bfritz/daily-manager.git"
+
+# Functions
+# --------------------------------------------------------------------------------------------------
+
+function load_db() {
+  if [ -z "$drparam" ]
+    then
+      echo "No SQL file supplied"
+      exit 1
+    else
+      docker cp "$1" "$(docker ps -aqf "name=$drcontainer")":"$drparam"
+      docker exec -it "$(docker ps -aqf "name=$drcontainer")" /usr/bin/mysql -u$drdbuser -p"$drdbpassword" -hdb $drdatabase -e 'source '"$drparam"''
+  fi
+}
+
+function build_image() {
+  if [ -f "Dockerfile" ]
+    then
+      echo "Dockerfile found, building image"
+      docker build -t $drimage:$drtag .
+    else
+      echo "Dockerfile not found, exiting"
+      exit 1
+  fi
+}
+
+function clone_repo() {
+  if [ -d "html" ]
+    then
+      echo "html directory found, recreating"
+      docker-compose down 2> /dev/null
+      sudo rm -rf html
+      git clone $drrepo html
+      docker-compose up -d
+    else
+      echo "html directory not found, exiting"
+      exit 1
+  fi
+}
+
+function start_devenv() {
+  docker-compose pull
+  docker-compose up -d
+}
+
+function stop_devenv() {
+  docker-compose down
+}
+
+function destroy_devenv() {
+  read -p "Are you sure you want to destroy the development environment? (y/n) " -n 1 -r
+  echo
+  if [[ $REPLY =~ ^[Yy]$ ]]
+    then
+      docker-compose down
+      sudo rm -rf html data
+    else
+      echo "Exiting"
+      exit 1
+  fi
+}
+
+function destroy_all() {
+  read -p "Are you sure you want to destroy all containers, images, volumes, networks, and your dev environment? (y/n) " -n 1 -r
+  echo
+  if [[ $REPLY =~ ^[Yy]$ ]]
+    then
+      docker stop "$(docker ps -q)"
+      docker rm "$(docker ps -a -q)"
+      docker rmi "$(docker images -q)"
+      docker volume rm "$(docker volume ls -q)"
+      docker network rm "$(docker network ls -q)"
+      echo "y" | docker system prune -a
+      sudo rm -rf html data
+    else
+      echo "Exiting"
+      exit 1
+  fi
+}
+
+function main() {
+
+  case "$drfunction" in
+    "build")
+      build_image
+      ;;
+    "load")
+      load_db "$drparam"
+      ;;
+    "clone")
+      clone_repo
+      ;;
+    "start")
+      start_devenv
+      ;;
+    "stop")
+      stop_devenv
+      ;;
+    "destroy")
+      destroy_devenv
+      ;;
+    "destroyall")
+      destroy_all
+      ;;
+    *)
+      echo "No function passed, exiting"
+      echo "--------------------------------"
+      echo "Usage: devenv [function] [param]"
+      echo ""
+      echo "Functions:"
+      echo "  build - Build the docker image"
+      echo "  load - Load the database from a sql file"
+      echo "  clone - Clone the repo into the html directory"
+      echo "  start - Start the development environment"
+      echo "  stop - Stop the development environment"
+      echo "  destroy - Destroy the development environment"
+      echo "  destroyall - Destroy all containers, images, volumes, networks, and your dev environment"
+      echo ""
+      exit 1
+      ;;
+  esac
+}
+
+main

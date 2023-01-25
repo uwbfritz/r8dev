@@ -1,0 +1,5 @@
+data/
+# Ignore the D9 install folder
+html/
+# Ignoring local cleanup script (uwbfritz)
+clean.sh
