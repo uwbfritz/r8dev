@@ -21,6 +21,15 @@ drfunction="$1"
 drparam="$2"
 drrepo="https://git.tacoma.uw.edu/bfritz/daily-manager.git"
 
+# TPUT Colors
+# --------------------------------------------------------------------------------------------------
+red=$(tput setaf 1)
+green=$(tput setaf 2)
+yellow=$(tput setaf 3)
+clear=$(tput sgr0)
+uline=$(tput smul)
+bold=$(tput bold)
+
 # Functions
 # --------------------------------------------------------------------------------------------------
 
@@ -167,21 +176,23 @@ function main() {
     destroy_all
     ;;
   *)
+    echo "$red$bold"
     echo "No function passed, exiting"
-    echo "--------------------------------"
+    echo "--------------------------------$clear"
     echo "Usage: devenv [function] [param]"
+    echo "$yellow$bold$uline"
+    echo "Functions:$clear"
     echo ""
-    echo "Functions:"
-    echo "  build - Build the docker image"
-    echo "  load - Load the database from a sql file"
-    echo "  dump - Dump the database to a sql file"
-    echo "  clone - Clone the repo into the html directory"
-    echo "  start - Start the development environment"
-    echo "  stop - Stop the development environment"
-    echo "  attach - Attach to the frontend container"
-    echo "  attachto - Attach to an active container"
-    echo "  destroy - Destroy the development environment"
-    echo "  destroyall - Destroy all containers, images, volumes, networks, and your dev environment"
+    echo "  $green build $clear - Build the docker image"
+    echo "  $green load $clear - Load the database from a sql file"
+    echo "  $green dump $clear - Dump the database to a sql file"
+    echo "  $green clone $clear - Clone the repo into the html directory"
+    echo "  $green start $clear - Start the development environment"
+    echo "  $green stop $clear - Stop the development environment"
+    echo "  $green attach $clear - Attach to the frontend container"
+    echo "  $green attachto $clear - Attach to an active container"
+    echo "  $green destroy $clear - Destroy the development environment"
+    echo "  $green destroyall $clear - Destroy all containers, images, volumes, networks, and your dev environment"
     echo ""
     exit 1
     ;;
