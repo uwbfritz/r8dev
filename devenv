@@ -34,6 +34,10 @@ function load_db() {
   fi
 }
 
+function dump_db() {
+  docker exec -it "$(docker ps -aqf "name=$drcontainer")" /usr/bin/mysqldump -u$drdbuser -p"$drdbpassword" -hdb $drdatabase > db_dump.sql
+}
+
 function build_image() {
   if [ -f "Dockerfile" ]; then
     echo "Dockerfile found, building image"
@@ -138,6 +142,9 @@ function main() {
   "load")
     load_db "$drparam"
     ;;
+  "dump")
+    dump_db
+    ;;
   "clone")
     clone_repo
     ;;
@@ -167,6 +174,7 @@ function main() {
     echo "Functions:"
     echo "  build - Build the docker image"
     echo "  load - Load the database from a sql file"
+    echo "  dump - Dump the database to a sql file"
     echo "  clone - Clone the repo into the html directory"
     echo "  start - Start the development environment"
     echo "  stop - Stop the development environment"
