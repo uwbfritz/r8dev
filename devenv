@@ -177,8 +177,8 @@ function main() {
     ;;
   *)
     echo "$red$bold"
-    echo "No function passed, exiting"
-    echo "--------------------------------$clear"
+    echo "No function passed, exiting $clear"
+    echo "--------------------------------"
     echo "Usage: devenv [function] [param]"
     echo "$yellow$bold$uline"
     echo "Functions:$clear"
