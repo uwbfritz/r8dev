@@ -18,4 +18,19 @@
 ### Usage:
 ```
 ./devenv    # Obtain a list of options
+
+Usage: devenv [function] [param]
+
+Functions:
+
+   build  - Build the docker image
+   load  - Load the database from a sql file
+   dump  - Dump the database to a sql file
+   clone  - Clone the repo into the html directory
+   start  - Start the development environment
+   stop  - Stop the development environment
+   attach  - Attach to the frontend container
+   attachto  - Attach to an active container
+   destroy  - Destroy the development environment
+   destroyall  - Destroy all containers, images, volumes, networks, and your dev environment
 ```
