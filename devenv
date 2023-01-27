@@ -25,38 +25,35 @@ drrepo="https://git.tacoma.uw.edu/bfritz/daily-manager.git"
 # --------------------------------------------------------------------------------------------------
 
 function load_db() {
-  if [ -z "$drparam" ]
-    then
-      echo "No SQL file supplied"
-      exit 1
-    else
-      docker cp "$1" "$(docker ps -aqf "name=$drcontainer")":"$drparam"
-      docker exec -it "$(docker ps -aqf "name=$drcontainer")" /usr/bin/mysql -u$drdbuser -p"$drdbpassword" -hdb $drdatabase -e 'source '"$drparam"''
+  if [ -z "$drparam" ]; then
+    echo "No SQL file supplied"
+    exit 1
+  else
+    docker cp "$1" "$(docker ps -aqf "name=$drcontainer")":/tmp/"$drparam"
+    docker exec -it "$(docker ps -aqf "name=$drcontainer")" /usr/bin/mysql -u$drdbuser -p"$drdbpassword" -hdb $drdatabase -e 'source /tmp/'"$drparam"''
   fi
 }
 
 function build_image() {
-  if [ -f "Dockerfile" ]
-    then
-      echo "Dockerfile found, building image"
-      docker build -t $drimage:$drtag .
-    else
-      echo "Dockerfile not found, exiting"
-      exit 1
+  if [ -f "Dockerfile" ]; then
+    echo "Dockerfile found, building image"
+    docker build -t $drimage:$drtag .
+  else
+    echo "Dockerfile not found, exiting"
+    exit 1
   fi
 }
 
 function clone_repo() {
-  if [ -d "html" ]
-    then
-      echo "html directory found, recreating"
-      docker-compose down 2> /dev/null
-      sudo rm -rf html
-      git clone $drrepo html
-      docker-compose up -d
-    else
-      echo "html directory not found, cloning"
-      git clone $drrepo html
+  if [ -d "html" ]; then
+    echo "html directory found, recreating"
+    docker-compose down 2>/dev/null
+    sudo rm -rf html
+    git clone $drrepo html
+    docker-compose up -d
+  else
+    echo "html directory not found, exiting"
+    exit 1
   fi
 }
 
@@ -69,86 +66,117 @@ function stop_devenv() {
   docker-compose down
 }
 
+# Attach to frontend container
+function attach() {
+  docker exec -it "$(docker ps -aqf "name=$drcontainer")" /bin/bash
+}
+
+function attachto() {
+if [ -x "$(command -v dialog)" ]; then
+    mapfile -t containers < <(docker ps --format "{{.Names}}\n")
+    while choice=$(dialog --title "$TITLE" \
+                    --menu "Please select" 10 40 3 "${containers[@]}" \
+                    2>&1 >/dev/tty)
+        do
+        if [ -n "$choice" ]; then
+            clear
+            docker exec -it "$choice" /bin/bash
+        fi
+        exit
+    done
+    clear
+else
+    mapfile -t containers < <(docker ps --format "{{.Names}}")
+    echo "Select a container to attach to:"
+    select container in "${containers[@]}"; do
+            if [ "$REPLY" -eq 0 ]; then
+                echo "Exiting..."
+                exit 0
+            fi
+        if [ -n "$container" ]; then
+            docker exec -it "$container" /bin/bash
+        fi
+        exit
+    done
+    fi
+}
+
 function destroy_devenv() {
   read -p "Are you sure you want to destroy the development environment? (y/n) " -n 1 -r
   echo
-  if [[ $REPLY =~ ^[Yy]$ ]]
-    then
-      docker-compose down
-      sudo rm -rf html data
-    else
-      echo "Exiting"
-      exit 1
+  if [[ $REPLY =~ ^[Yy]$ ]]; then
+    docker-compose down
+    sudo rm -rf html data
+  else
+    echo "Exiting"
+    exit 1
   fi
 }
 
 function destroy_all() {
   read -p "Are you sure you want to destroy all containers, images, volumes, networks, and your dev environment? (y/n) " -n 1 -r
   echo
-  if [[ $REPLY =~ ^[Yy]$ ]]
-    then
-      docker stop "$(docker ps -q)"
-      docker rm "$(docker ps -a -q)"
-      docker rmi "$(docker images -q)"
-      docker volume rm "$(docker volume ls -q)"
-      docker network rm "$(docker network ls -q)"
-      echo "y" | docker system prune -a
-      sudo rm -rf html data
-    else
-      echo "Exiting"
-      exit 1
+  if [[ $REPLY =~ ^[Yy]$ ]]; then
+    docker stop "$(docker ps -q)"
+    docker rm "$(docker ps -a -q)"
+    docker rmi "$(docker images -q)"
+    docker volume rm "$(docker volume ls -q)"
+    docker network rm "$(docker network ls -q)"
+    echo "y" | docker system prune -a
+    sudo rm -rf html data
+  else
+    echo "Exiting"
+    exit 1
   fi
 }
 
-# Attach to frontend container
-function attach() {
-  docker exec -it "$(docker ps -aqf "name=$drcontainer")" /bin/bash
-}
-
 function main() {
-
   case "$drfunction" in
-    "build")
-      build_image
-      ;;
-    "load")
-      load_db "$drparam"
-      ;;
-    "clone")
-      clone_repo
-      ;;
-    "start")
-      start_devenv
-      ;;
-    "stop")
-      stop_devenv
-      ;;
-    "attach")
-      attach
-      ;;
-    "destroy")
-      destroy_devenv
-      ;;
-    "destroyall")
-      destroy_all
-      ;;
-    *)
-      echo "No function passed, exiting"
-      echo "--------------------------------"
-      echo "Usage: devenv [function] [param]"
-      echo ""
-      echo "Functions:"
-      echo "  build - Build the docker image"
-      echo "  load - Load the database from a sql file"
-      echo "  clone - Clone the repo into the html directory"
-      echo "  start - Start the development environment"
-      echo "  stop - Stop the development environment"
-      echo "  attach - Attach to the frontend container"
-      echo "  destroy - Destroy the development environment"
-      echo "  destroyall - Destroy all containers, images, volumes, networks, and your dev environment"
-      echo ""
-      exit 1
-      ;;
+  "build")
+    build_image
+    ;;
+  "load")
+    load_db "$drparam"
+    ;;
+  "clone")
+    clone_repo
+    ;;
+  "start")
+    start_devenv
+    ;;
+  "stop")
+    stop_devenv
+    ;;
+  "attach")
+    attach
+    ;;
+  "attachto")
+    attachto
+    ;;
+  "destroy")
+    destroy_devenv
+    ;;
+  "destroyall")
+    destroy_all
+    ;;
+  *)
+    echo "No function passed, exiting"
+    echo "--------------------------------"
+    echo "Usage: devenv [function] [param]"
+    echo ""
+    echo "Functions:"
+    echo "  build - Build the docker image"
+    echo "  load - Load the database from a sql file"
+    echo "  clone - Clone the repo into the html directory"
+    echo "  start - Start the development environment"
+    echo "  stop - Stop the development environment"
+    echo "  attach - Attach to the frontend container"
+    echo "  attachto - Attach to an active container"
+    echo "  destroy - Destroy the development environment"
+    echo "  destroyall - Destroy all containers, images, volumes, networks, and your dev environment"
+    echo ""
+    exit 1
+    ;;
   esac
 }
 
